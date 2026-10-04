@@ -1,5 +1,20 @@
+%% FINAL Script for analysing multi-location data
+% run on new data 2026-10-04
 
+% This is a custom function
+data = ImportMatfile();
 
+% restructure
+newdata.subj{1,1} = data{1,1}.data.P1;
+newdata.subj{2,1} = data{2,1}.data.P2;
+newdata.subj{3,1} = data{3,1}.data.P3;
+newdata.subj{4,1} = data{4,1}.data.P4;
+newdata.subj{5,1} = data{5,1}.data.P5;
+newdata.subj{6,1} = data{6,1}.data.P6;
+newdata.subj{7,1} = data{7,1}.data.P7;
+
+% New structure called location data - locdata
+locdata = newdata;
 
 %% Fieldnames
 
