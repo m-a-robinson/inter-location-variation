@@ -1,17 +1,46 @@
 %% FINAL Script for analysing multi-location data
 % run on new data 2026-10-04
 
-% This is a custom function
-data = ImportMatfile();
+% NOTE (2026-10-xx fix): ImportMatfile() returns data{i}.data.P<n>, which
+% is the STALE pre-fix copy of each participant's data still sitting
+% inside P<n>.mat (same Subject-7/Trees offset, Subject-2/Sporthall
+% zero-fill and Subject-1/Subject-3 duplication documented in the audit).
+% The corrected data lives in the flat {loc}_{task}_{joint} trial
+% matrices at the top level of each P<n>.mat file, so build locdata
+% directly from those instead of going through ImportMatfile().
 
-% restructure
-newdata.subj{1,1} = data{1,1}.data.P1;
-newdata.subj{2,1} = data{2,1}.data.P2;
-newdata.subj{3,1} = data{3,1}.data.P3;
-newdata.subj{4,1} = data{4,1}.data.P4;
-newdata.subj{5,1} = data{5,1}.data.P5;
-newdata.subj{6,1} = data{6,1}.data.P6;
-newdata.subj{7,1} = data{7,1}.data.P7;
+dataDir    = pwd;   % folder containing P1.mat .. P7.mat
+locPrefix  = {'a','g','s','t'};
+locName    = {'avril','grass','sporthall','trees'};
+taskSuffix = {'cmj','run','sts','wlk'};
+taskName   = {'cmj','run','sts','walk'};
+jointName  = {'trunk','pelvis','hip','knee','ankle'};
+
+newdata = struct();
+
+for pp = 1:7
+    raw = load(fullfile(dataDir, sprintf('P%d.mat', pp)));
+
+    for ll = 1:numel(locName)
+        for tt = 1:numel(taskName)
+            for jj = 1:numel(jointName)
+                varName = sprintf('%s_%s_%s', locPrefix{ll}, taskSuffix{tt}, jointName{jj});
+                M = raw.(varName);
+
+                % one known cell (P3 sporthall/run/knee) carries a 102nd,
+                % all-zero trailing row; trim to the usual 101-point cycle
+                if size(M,1) > 101
+                    M = M(1:101, :);
+                end
+
+                % columns are trial1(x,y,z), trial2(x,y,z), ... per xCols/yCols/zCols
+                newdata.subj{pp,1}.(locName{ll}).(taskName{tt}).(jointName{jj}).x = M(:, 1:3:end);
+                newdata.subj{pp,1}.(locName{ll}).(taskName{tt}).(jointName{jj}).y = M(:, 2:3:end);
+                newdata.subj{pp,1}.(locName{ll}).(taskName{tt}).(jointName{jj}).z = M(:, 3:3:end);
+            end
+        end
+    end
+end
 
 % New structure called location data - locdata
 locdata = newdata;
